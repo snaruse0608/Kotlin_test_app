@@ -3,7 +3,7 @@ package com.example.sample_app
 import android.util.Log
 import java.util.*
 
-public class Memo(var title: String, var id: Long, var body_text: String ,var date_time:Date,var delete_check: Boolean) {
+public class Memo(var title: String, var id: Int, var body_text: String ,var date_time:String,var delete_check: Boolean) {
     init {
         Log.d("Memo Init", "$title")
     }

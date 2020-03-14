@@ -4,31 +4,25 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
-import android.util.SparseBooleanArray
 import android.view.View
 import android.widget.AdapterView
 import android.widget.Button
-import android.widget.ListAdapter
 import android.widget.ListView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.util.size
-import com.example.sample_app.R.id
 import com.example.sample_app.R.layout.activity_main
-import java.util.*
 import kotlin.collections.ArrayList
 
 //メモリスト表示用Activity
 class MainActivity : AppCompatActivity() {
     val D_request_code = 1 //MainActivity→MemoActivityのリクエストコード
-    var Id:Long = 0 //メモのID(今後SQLiteで運用予定)
-
+    lateinit var memoDB : MemoDBAdapter
     // 起動処理
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(activity_main)
 
-        val memoList: ArrayList<Memo> = arrayListOf<Memo>() //memo格納用可変長配列
+        memoDB= MemoDBAdapter(this)
+        val memoList: ArrayList<Memo> = memoDB.getMemoList() //memo格納用可変長配列
         //リストビューにメモ表示
         val memoListView: ListView = findViewById(R.id.ListView_Memo) as ListView
         var memoListAdapter = MemoAdapter(this,memoList)
@@ -37,8 +31,7 @@ class MainActivity : AppCompatActivity() {
         //新規作成ボタンにリスナ割り当て
         val bt_cre=findViewById<View>(R.id.button_create) as Button
         bt_cre.setOnClickListener {
-            Id++ //Id数インクリメント
-            startMemoActivity("",Id,"",-1) //Memo作成用Activityへ遷移
+            startMemoActivity("","",-1) //Memo作成用Activityへ遷移
         }
 
         //削除ボタンにリスナ割り当て
@@ -61,24 +54,21 @@ class MainActivity : AppCompatActivity() {
         //作成済みメモの編集用にリスナ割り当て
         memoListView.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
             memoListAdapter = memoListView.adapter as MemoAdapter
-            Id++ //Id数インクリメント
-            //編集前情報取得
             val memo: Memo = memoListAdapter.getItem(position) as Memo
             val t = memo.title
             val b = memo.body_text
 
-            startMemoActivity(t,id,b,position) //Memo作成用Activityへ遷移
+            startMemoActivity(t,b,position) //Memo作成用Activityへ遷移
         }
 
     }
 
     //Memo作成用Activity遷移処理
-    fun startMemoActivity(t: String,i:Long,b:String,p: Int) {
+    fun startMemoActivity(t: String,b:String,p: Int) {
         //遷移先にmemoActivity指定
         val intent = Intent(this,MemoActivity::class.java)
         //遷移先への情報の送信
         intent.putExtra("Title", t);
-        intent.putExtra("Id", i);
         intent.putExtra("Body", b);
         intent.putExtra("Position",p) //編集時の編集前データ削除処理に使うためArraylist内のIndexを渡す
         //遷移先へのActivity開始通知
@@ -100,7 +90,6 @@ class MainActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         val memoListView: ListView = findViewById(R.id.ListView_Memo) as ListView
         val memoListAdapter: MemoAdapter = memoListView.adapter as MemoAdapter
-        val memoList: ArrayList<Memo> = memoListAdapter.Memos
         //まず自分がmemoActivityに出したリクエストか確認
         if(requestCode == D_request_code) {
             //受信結果ごとに処理を変える
@@ -108,26 +97,27 @@ class MainActivity : AppCompatActivity() {
                 //MemoActivityからMemo作成用の情報を取得
                 var t = data!!.getStringExtra("Title")
                 var b = data.getStringExtra("Body")
-                val id = data.getLongExtra("Id",0)
-                //Memo作成時刻を取得
-                val d= Date()
 
+                var id:Int = -1
                 //編集前データのArrayList内indexを取得
                 val pos = data.getIntExtra("Position",-1)
+                if(pos!=-1) {
+                    id=memoListAdapter.getItemId(pos).toInt()
+                }
                 //nullチェック
                 if(t==null) t=""
                 if(b==null) b=""
                 //新規メモ作成&追加
-                val m = Memo(t,id,b,d,false)
-                memoList.add(m)
+                memoDB.addMemo(t,b)
                 //新規作成ではなく編集の場合編集前データを消去
-                if(pos>=0) {
-                    memoList.removeAt(pos)
+                if(pos>=0 && id>=0) {
+                    memoDB.deleteMemo(id)
                 }
+                val memoList=memoDB.getMemoList()
                 //リスト表示を更新
                 memoListView.adapter = MemoAdapter(this,memoList)
             } else if(resultCode== Activity.RESULT_CANCELED) {
-                Id-- //キャンセルの場合発行した新規IDをロールバック
+                //キャンセル時処理予約
             }
         }
     }
@@ -135,17 +125,21 @@ class MainActivity : AppCompatActivity() {
     fun deleteMemo() {
         val memoListView: ListView = findViewById(R.id.ListView_Memo) as ListView
         val memoListAdapter: MemoAdapter = memoListView.adapter as MemoAdapter
-        val memoList: ArrayList<Memo> = memoListAdapter.Memos
         //checkBoxがチェックされていたら削除
-        for(i in memoList.size-1 downTo 0 step 1) {
+        for(i in memoListAdapter.count-1 downTo 0 step 1) {
             if(i<memoListAdapter.count) {
                 if(memoListAdapter.getItemChecked(i)) {
-                    memoList.removeAt(i)
+                    memoDB.deleteMemo(memoListAdapter.getItemId(i).toInt())
                 }
             }
         }
         //リスト表示を更新
-
+        val memoList=memoDB.getMemoList()
         memoListView.adapter = MemoAdapter(this,memoList)
+    }
+    //アプリ終了時にDBをクローズ
+    override fun onDestroy() {
+        memoDB.closeDB()
+        super.onDestroy()
     }
 }

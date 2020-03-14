@@ -29,7 +29,7 @@ class MemoAdapter(var context: Context, val Memos: ArrayList<Memo>) : BaseAdapte
 
     //指定されたインデックスのメモのIDを返す
     override fun getItemId(position: Int): Long {
-        return Memos[position].id
+        return Memos[position].id.toLong()
     }
     //指定されたインデックスのメモのチェックボックスの内容を返す
     fun getItemChecked(position: Int): Boolean {
@@ -40,11 +40,9 @@ class MemoAdapter(var context: Context, val Memos: ArrayList<Memo>) : BaseAdapte
     override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
         //memo_list.xmlのlayoutを呼び出し
         val view = layoutInflater.inflate(R.layout.memo_list, parent, false)
-        //メモの日付表示の形式を整える
-        val sdf : SimpleDateFormat = SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
 
         //日付と件名をListViewに表示
-        view.findViewById<TextView>(R.id.dateView).text = sdf.format(Memos[position].date_time)
+        view.findViewById<TextView>(R.id.dateView).text = Memos[position].date_time
         view.findViewById<TextView>(R.id.titleView).text = Memos[position].title
         //view.findViewById<CheckBox>(R.id.checkBox).isChecked=Memos[position].delete_check
 

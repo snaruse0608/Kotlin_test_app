@@ -12,7 +12,6 @@ import androidx.appcompat.app.AppCompatActivity
 class MemoActivity : AppCompatActivity() {
     val D_title_max_length = 20 //件名の最大長
     val D_body_max_length = 500 //本文の最大長
-    var id:Long=0; //id管理(SQLite実装後用のDB管理に用いる予定) onCreate内のローカルにして値渡しにするべきな気がする
 
     //Activity起動処理
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,7 +22,6 @@ class MemoActivity : AppCompatActivity() {
         var t =intent.getStringExtra("Title")
         //nullチェック
         if(t==null) t=""
-        id=intent.getLongExtra("Id", 0)
         var b =intent.getStringExtra("Body")
         //nullチェック
         if(b==null) b=""
@@ -68,7 +66,6 @@ class MemoActivity : AppCompatActivity() {
         //MainActivityへ結果を返す
         val intent = Intent()
         intent.putExtra("Title", t)
-        intent.putExtra("Id",id)
         intent.putExtra("Body",b)
         intent.putExtra("Position",pos)
         //メモ登録の場合OKを返す

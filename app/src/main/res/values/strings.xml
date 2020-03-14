@@ -10,4 +10,6 @@
     <string name="alert_message">チェックしたメモを削除します</string>
     <string name="posi_res">はい</string>
     <string name="nega_res">いいえ</string>
+    <string name="memoDB">memo_DB</string>
+
 </resources>
